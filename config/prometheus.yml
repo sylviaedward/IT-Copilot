@@ -1,4 +1,4 @@
-# Prometheus 配置文件 — IT-Copilot 智能客服系统
+# Prometheus 配置文件 — IT-Copilot 企业内部 IT 服务台
 
 global:
   scrape_interval: 15s
