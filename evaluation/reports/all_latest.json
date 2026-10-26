@@ -7,31 +7,31 @@
       "suite": "evaluate_intents",
       "exit_code": 0,
       "status": "passed",
-      "report": "/Users/sylvia/Desktop/IT-Copilot/evaluation/reports/intent_latest.json"
+      "report": "evaluation/reports/intent_latest.json"
     },
     {
       "suite": "evaluate_memory",
       "exit_code": 0,
       "status": "passed",
-      "report": "/Users/sylvia/Desktop/IT-Copilot/evaluation/reports/memory_latest.json"
+      "report": "evaluation/reports/memory_latest.json"
     },
     {
       "suite": "evaluate_rag",
       "exit_code": 0,
       "status": "passed",
-      "report": "/Users/sylvia/Desktop/IT-Copilot/evaluation/reports/rag_latest.json"
+      "report": "evaluation/reports/rag_latest.json"
     },
     {
       "suite": "evaluate_planner",
       "exit_code": 0,
       "status": "passed",
-      "report": "/Users/sylvia/Desktop/IT-Copilot/evaluation/reports/planner_latest.json"
+      "report": "evaluation/reports/planner_latest.json"
     },
     {
       "suite": "evaluate_phase6",
       "exit_code": 0,
       "status": "passed",
-      "report": "/Users/sylvia/Desktop/IT-Copilot/evaluation/reports/phase6_latest.json"
+      "report": "evaluation/reports/phase6_latest.json"
     }
   ]
 }

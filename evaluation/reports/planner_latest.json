@@ -3,7 +3,7 @@
   "total": 5,
   "plan_validity": 1.0,
   "max_steps": 6,
-  "parallel_ready": 1,
+  "parallel_ready": 2,
   "status": "passed",
   "cases": [
     {
@@ -16,7 +16,7 @@
     {
       "message": "VPN 连不上并创建工单",
       "complex": false,
-      "steps": 1,
+      "steps": 2,
       "bounded": true,
       "has_trace_fields": true
     },

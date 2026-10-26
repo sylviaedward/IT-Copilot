@@ -14,7 +14,7 @@ def main():
         report_name={"evaluate_intents.py":"intent_latest.json","evaluate_memory.py":"memory_latest.json","evaluate_rag.py":"rag_latest.json","evaluate_planner.py":"planner_latest.json","evaluate_phase6.py":"phase6_latest.json"}[name]
         report_path=ROOT/"evaluation/reports"/report_name
         report=json.loads(report_path.read_text()) if report_path.exists() else {}
-        rows.append({"suite":name.removesuffix(".py"),"exit_code":proc.returncode,"status":report.get("status", "failed" if proc.returncode else "unknown"),"report":str(report_path)})
+        rows.append({"suite":name.removesuffix(".py"),"exit_code":proc.returncode,"status":report.get("status", "failed" if proc.returncode else "unknown"),"report":str(report_path.relative_to(ROOT))})
     passed=all(r["exit_code"]==0 and r["status"] in {"passed","complete"} for r in rows)
     result={"suite":"it-copilot-evaluation-gate","status":"passed" if passed else "failed","all_passed":passed,"suites":rows}
     out=ROOT/"evaluation/reports/all_latest.json"; out.parent.mkdir(exist_ok=True); out.write_text(json.dumps(result,ensure_ascii=False,indent=2)); print(json.dumps(result,ensure_ascii=False,indent=2)); raise SystemExit(0 if passed else 1)

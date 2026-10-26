@@ -31,7 +31,7 @@ class KnowledgeSearchResult(BaseModel):
 
 @server.tool(annotations=ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True))
 async def search_local_knowledge(query: Annotated[str, Field(min_length=1, max_length=2000)], top_k: Annotated[int, Field(ge=1, le=20, strict=True)] = 5) -> KnowledgeSearchResult:
-    """检索 IT-Copilot 本地客服知识库，返回文档标题、片段和检索分数。"""
+    """检索 IT-Copilot 本地 IT 知识库，返回文档标题、片段和检索分数。"""
     if knowledge_base is None:
         raise ToolError("知识库尚未就绪")
     query = query.strip()

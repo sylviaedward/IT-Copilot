@@ -3,13 +3,13 @@ const DEFAULT_BACKENDS = {
   python: {
     id: 'python',
     label: 'Python',
-    baseUrl: runtimeConfig().pythonApiUrl || import.meta.env.VITE_PYTHON_API_URL || 'http://127.0.0.1:8001',
+    baseUrl: runtimeConfig().pythonApiUrl || import.meta.env?.VITE_PYTHON_API_URL || 'http://127.0.0.1:8001',
     port: '8001'
   },
   java: {
     id: 'java',
     label: 'Java',
-    baseUrl: runtimeConfig().javaApiUrl || import.meta.env.VITE_JAVA_API_URL || '/api/java',
+    baseUrl: runtimeConfig().javaApiUrl || import.meta.env?.VITE_JAVA_API_URL || '/api/java',
     port: '8080'
   }
 }
@@ -116,7 +116,7 @@ export async function requestChatStream(type, settings, message, onEvent = () =>
   payload.client_request_id = chatAttempts.get(attemptKey)
   const headers = new Headers({ 'Content-Type': 'application/json', Accept: 'text/event-stream' })
   if (settings.pythonToken) headers.set('Authorization', `Bearer ${settings.pythonToken}`)
-  const response = await fetch(`${normalizeBaseUrl(meta.baseUrl)}/chat/stream`, { method: 'POST', headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(55000) })
+  const response = await fetch(`${normalizeBaseUrl(meta.baseUrl)}/chat/stream`, { method: 'POST', headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(120000) })
   if (!response.ok || !response.body) { chatAttempts.delete(attemptKey); throw new Error(`${response.status} ${response.statusText}`) }
   const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ''; let eventName = 'message'; let completed = null
   const consume = (chunk) => {
@@ -198,7 +198,7 @@ function normalizeChatResponse(type, raw) {
   }
 }
 
-function normalizeToolTraceResponse(raw) {
+export function normalizeToolTraceResponse(raw) {
   const trace = raw?.trace || {}
   return {
     requestId: raw?.request_id || raw?.requestId || '',
@@ -206,7 +206,7 @@ function normalizeToolTraceResponse(raw) {
     trace: {
       ...trace,
       toolsUsed: trace.tools_used || trace.toolsUsed || [],
-      toolCalls: trace.tool_calls || trace.toolCalls || []
+      toolCalls: trace.tool_traces || trace.tool_calls || trace.toolCalls || []
     },
     raw
   }
@@ -217,7 +217,7 @@ async function requestFor(type, settings, path, options = {}) {
   const headers = new Headers(options.headers || {})
   if (type === 'python' && settings.pythonToken) headers.set('Authorization', `Bearer ${settings.pythonToken}`)
   return requestJson(backendMeta(type, settings).baseUrl, path, { ...options, headers,
-    signal: options.signal || AbortSignal.timeout(path === '/chat' ? 55000 : 20000) })
+    signal: options.signal || AbortSignal.timeout(path === '/chat' || path === '/chat/stream' ? 120000 : 20000) })
 }
 
 async function requestJson(baseUrl, path, options = {}) {

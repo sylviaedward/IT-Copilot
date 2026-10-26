@@ -107,11 +107,11 @@ class BaseAgent:
             kwargs={"model":self._model,"max_tokens":self.profile.max_tokens,"temperature":self.profile.temperature,"system":self._build_system_prompt(req),"messages":messages}
             if tools: kwargs["tools"]=[{"name":s.name,"description":s.description,"input_schema":s.input_schema} for s in tools.values()]
             try:
-                resp=await asyncio.wait_for(self._client.messages.create(**kwargs),timeout=max(1,_env_float("IT_COPILOT_LLM_TIMEOUT_S",30)))
+                resp=await asyncio.wait_for(self._client.messages.create(**kwargs),timeout=max(1,_env_float("IT_COPILOT_LLM_TIMEOUT_S",90)))
             except Exception as exc:
                 status_code=getattr(exc,"status_code",None)
                 error_type=type(exc).__name__.lower()
-                if status_code is not None and int(status_code) >= 500 or any(token in error_type for token in ("apiconnection", "connecterror", "timeoutexception", "readtimeout", "connecttimeout")):
+                if (status_code is not None and int(status_code) >= 500) or any(token in error_type for token in ("apiconnection", "connecterror", "timeouterror", "timeoutexception", "readtimeout", "connecttimeout")):
                     gateway_url=os.getenv("ANTHROPIC_BASE_URL", "http://127.0.0.1:8082")
                     error=GatewayUnavailableError(f"模型网关请求失败（{type(exc).__name__}）", used, traces, gateway_url)
                     raise error from exc
@@ -166,7 +166,7 @@ class BaseAgent:
         try: validators.validator_for(spec.input_schema)(spec.input_schema).validate(args)
         except ValidationError as ex: raise ValueError(f"工具参数未通过 JSON Schema 校验（{ex.validator}）") from None
     @staticmethod
-    def _needs_escalation(content): return any(x in content for x in ("转人工","人工客服","无法处理","escalate"))
+    def _needs_escalation(content): return any(x in content for x in ("转人工","人工客服","人工坐席","无法处理","escalate"))
 
 class TriageAgent(BaseAgent):
     system_prompt="你是 IT-Copilot 的 Triage Agent，负责企业员工的首轮接待、自然聊天、问题澄清和安全分流。对‘你是谁’等普通问题直接自然回答；识别出 IT 问题时收集最少必要信息并给出下一步，不要虚构已执行操作。"

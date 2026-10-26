@@ -218,3 +218,13 @@ def test_intent_source_is_exposed(source):
 def test_followup_patterns_are_detected(message):
     assert any(token in message for token in ("还是不行", "那个", "第二个"))
 
+
+def test_chat_response_exposes_knowledge_used_flag_for_sse_dump():
+    import api.main
+    base = dict(request_id="r2", response="ok", status="success", agent_type="network_software", intent="vpn_issue")
+    no_kb = api.main.ChatResponse(**base, tools_used=["lookup_error_code"])
+    with_kb = api.main.ChatResponse(**base, tools_used=["search_knowledge_base"], knowledge_used=True)
+    assert no_kb.knowledge_used is False
+    assert with_kb.knowledge_used is True
+    assert with_kb.model_dump()["knowledge_used"] is True
+

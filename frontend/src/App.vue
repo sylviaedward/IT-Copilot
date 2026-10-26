@@ -109,23 +109,25 @@
                       <span v-if="item.error" class="error-label">请求失败</span>
                       <small v-else-if="item.role === 'assistant'">{{ currentBackend.label }} Agent</small>
                     </div>
-                    <p>{{ item.content }}</p>
                     <span v-if="item.meta && !item.error" class="agent-tag">
                       <AppIcon name="route" />
                       {{ item.meta }}
                     </span>
+                    <p>{{ formatBody(item.content) }}</p>
                     <details v-if="item.trace?.toolCalls?.length || item.trace?.toolsUsed?.length" class="message-trace">
                       <summary>
                         <AppIcon name="chevron" />
                         <span>工具调用</span>
-                        <span class="count-tag">{{ item.trace.toolCalls?.length || 0 }}</span>
+                        <span class="count-tag">{{ item.trace.toolCalls?.length || item.trace.toolsUsed?.length || 0 }}</span>
                       </summary>
                       <div v-for="(call, index) in item.trace.toolCalls" :key="`${item.id}-${index}`" class="trace-call-item">
                         <div class="trace-call-meta">
                           <strong>{{ call.tool_name || 'unknown_tool' }}</strong>
                           <span :class="call.success ? 'success' : 'danger'">{{ call.success ? '成功' : '失败' }}</span>
                         </div>
+                        <p v-if="call.agent_type" class="trace-call-agent">{{ call.agent_type }}</p>
                         <pre>{{ formatJson(call.input || {}) }}</pre>
+                        <p v-if="!call.success && call.error" class="trace-call-error">{{ call.error }}</p>
                       </div>
                       <p v-if="!item.trace.toolCalls?.length" class="muted">已调用：{{ item.trace.toolsUsed.join(' · ') }}</p>
                     </details>
@@ -848,6 +850,10 @@ function formatJson(value) {
   } catch {
     return String(value ?? '')
   }
+}
+
+function formatBody(text) {
+  return String(text ?? '').replace(/\*\*([^*]+)\*\*/g, '$1')
 }
 
 function createMessageId() {
