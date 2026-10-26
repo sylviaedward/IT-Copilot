@@ -56,7 +56,7 @@ flowchart LR
 | 记忆召回 / 偏好命中 | 1.00 / 1.00 | 4 条离线用例 |
 | 无关注入率 | 0.00 | 记忆评测 |
 | 安全回归通过率 | 4/4 | 脱敏、审批、失败不编造、部门边界 |
-| 后端 / 前端测试 | 61 / 14 | 离线 pytest / node:test |
+| 后端 / 前端测试 | 63 / 14 | 离线 pytest / node:test |
 
 ## 快速开始
 
@@ -93,7 +93,7 @@ tooling/      Schema、TTL、超时、熔断、fallback
 gateway/      本地协议转换网关
 frontend/     Vue + Vite 前端
 evaluation/   固定数据集与可复现报告
-tests/        后端离线回归（当前 61 项）
+tests/        后端离线回归（当前 63 项）
 docs/         设计取舍、截图与变更记录
 ```
 

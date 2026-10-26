@@ -4,7 +4,7 @@
 
 - 增加 `/chat/stream` SSE 状态流、前端工具/审批状态展示。
 - 统一 `/trace/{request_id}` 回放计划、步骤、工具、记忆、token、耗时、fallback 与审批事件。
-- 扩充离线后端边界测试至 61 项，保留前端 14 项 node:test。
+- 扩充离线后端边界测试至 63 项，保留前端 14 项 node:test。
 - 重写项目主页 README，补充架构、指标、生产替换边界、设计取舍和 MIT License。
 
 ## Phase 1–6 — IT-Copilot 基础能力
