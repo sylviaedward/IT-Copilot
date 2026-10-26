@@ -135,6 +135,52 @@ def test_request_has_department_and_budget_fields():
     assert request.department == "研发" and request.request_id
 
 
+def test_agent_surfaces_gateway_connection_failure():
+    async def run():
+        orchestrator = AgentOrchestrator("sk-local", base_url="http://127.0.0.1:8082")
+        agent = orchestrator._pool[AgentType.NETWORK_SOFTWARE][0]
+
+        class APIConnectionError(Exception):
+            pass
+
+        class Messages:
+            async def create(self, **kwargs):
+                raise APIConnectionError("connection refused")
+
+        class Client:
+            messages = Messages()
+
+        agent._client = Client()
+        result = await agent.handle(Request("VPN 连不上"))
+        assert result.error_code == "gateway_unavailable"
+        assert "网关未启动" in result.content
+
+    asyncio.run(run())
+
+
+def test_agent_surfaces_gateway_5xx_without_request_details():
+    async def run():
+        orchestrator = AgentOrchestrator("sk-local", base_url="http://127.0.0.1:8082")
+        agent = orchestrator._pool[AgentType.TRIAGE][0]
+
+        class InternalServerError(Exception):
+            status_code = 502
+
+        class Messages:
+            async def create(self, **kwargs):
+                raise InternalServerError("upstream unavailable")
+
+        class Client:
+            messages = Messages()
+
+        agent._client = Client()
+        result = await agent.handle(Request("你是谁"))
+        assert result.error_code == "gateway_unavailable"
+        assert "upstream" not in result.content
+
+    asyncio.run(run())
+
+
 def test_sse_route_is_registered():
     import api.main
     assert any(route.path == "/chat/stream" for route in api.main.app.routes)

@@ -125,11 +125,50 @@ cleanup() {
 }
 trap cleanup INT TERM EXIT
 
-if [[ -f "$HERE/gateway/.env.gateway" || -n "${OPENAI_API_KEY:-}" ]]; then
-  IT_COPILOT_PYTHON="$PYTHON_BIN" "$HERE/gateway/run_gateway.sh" >"$HERE/logs/gateway.log" 2>&1 & GATEWAY_PID=$!
+if [[ -f "$HERE/gateway/.env.gateway" ]]; then
+  :
 else
-  echo "未找到 gateway/.env.gateway，网关不会启动。请先复制 gateway/.env.gateway.example 并填写模型配置。" >&2
+  echo "错误：未找到 gateway/.env.gateway。请先复制 gateway/.env.gateway.example 并填写模型配置。" >&2
+  echo "网关未配置时不会启动 API；详细说明见 $HERE/logs/gateway.log（如已存在）。" >&2
+  exit 1
 fi
+
+IT_COPILOT_PYTHON="$PYTHON_BIN" "$HERE/gateway/run_gateway.sh" >"$HERE/logs/gateway.log" 2>&1 & GATEWAY_PID=$!
+
+gateway_ready() {
+  local health
+  [[ -n "$GATEWAY_PID" ]] || return 1
+  kill -0 "$GATEWAY_PID" 2>/dev/null || return 1
+  health="$($PYTHON_BIN - "$GATEWAY_PORT" <<'PY' 2>/dev/null || true
+import json, sys, urllib.request
+port = sys.argv[1]
+try:
+    with urllib.request.urlopen(f"http://127.0.0.1:{port}/health", timeout=1.0) as response:
+        body = json.load(response)
+    print("ready" if body.get("status") == "ok" and body.get("key_configured") is True else "not-ready")
+except Exception:
+    print("not-ready")
+PY
+  )"
+  [[ "$health" == "ready" ]]
+}
+
+echo "等待 Anthropic→OpenAI 网关就绪（127.0.0.1:${GATEWAY_PORT}）..."
+GATEWAY_READY=false
+for _ in {1..20}; do
+  if gateway_ready; then GATEWAY_READY=true; break; fi
+  sleep 1
+done
+if [[ "$GATEWAY_READY" != true ]]; then
+  if ! kill -0 "$GATEWAY_PID" 2>/dev/null; then
+    echo "错误：网关进程已退出，API 不会启动。" >&2
+  else
+    echo "错误：网关在等待窗口内未通过健康检查，或 key_configured=false；API 不会启动。" >&2
+  fi
+  echo "请检查 gateway/.env.gateway、8082 端口和上游配置；详细日志：$HERE/logs/gateway.log" >&2
+  exit 1
+fi
+echo "网关已就绪：status=ok，key_configured=true。"
 
 IT_COPILOT_PYTHON="$PYTHON_BIN" "$HERE/run_local.sh" >"$HERE/logs/api.log" 2>&1 & API_PID=$!
 

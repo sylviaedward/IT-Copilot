@@ -62,6 +62,10 @@ class AgentCallResult:
     content:str; tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); status:str="success"; token_usage:Dict[str,int]=field(default_factory=dict)
 class AgentCallError(RuntimeError):
     def __init__(self,message,tools_used,tool_traces): super().__init__(message); self.tools_used=list(tools_used); self.tool_traces=list(tool_traces)
+class GatewayUnavailableError(AgentCallError):
+    def __init__(self,message,tools_used,tool_traces,gateway_url):
+        super().__init__(message,tools_used,tool_traces)
+        self.gateway_url=gateway_url
 @dataclass
 class RoutingDecision:
     primary_agent:AgentType; supporting_agents:List[AgentType]=field(default_factory=list); reason:str=""; confidence:float=0.
@@ -89,6 +93,9 @@ class BaseAgent:
         except asyncio.CancelledError: raise
         except Exception as ex:
             ms=(time.monotonic()-t0)*1000; self.stats.total_ms+=ms; self.stats.record(False,ms,req.request_id); logger.exception("%s LLM call failed",self.agent_type.value)
+            if isinstance(ex,GatewayUnavailableError):
+                logger.error("LLM gateway unavailable: url=%s error_type=%s detail=%s", ex.gateway_url, type(ex.__cause__ or ex).__name__, ex)
+                return AgentResponse(self.agent_type,"模型网关未启动或不可用，请先启动网关后重试。",False,latency_ms=ms,tools_used=ex.tools_used,tool_traces=ex.tool_traces,status="failed",error_code="gateway_unavailable")
             return AgentResponse(self.agent_type,"抱歉，模型暂时无法处理该请求，请稍后重试。",False,latency_ms=ms,tools_used=getattr(ex,"tools_used",[]),tool_traces=getattr(ex,"tool_traces",[]),status="failed",error_code="agent_failed")
     async def _call_llm(self,req):
         messages=[]; token_usage={"input_tokens":0,"output_tokens":0}
@@ -99,7 +106,16 @@ class BaseAgent:
         for _ in range(3):
             kwargs={"model":self._model,"max_tokens":self.profile.max_tokens,"temperature":self.profile.temperature,"system":self._build_system_prompt(req),"messages":messages}
             if tools: kwargs["tools"]=[{"name":s.name,"description":s.description,"input_schema":s.input_schema} for s in tools.values()]
-            resp=await asyncio.wait_for(self._client.messages.create(**kwargs),timeout=max(1,_env_float("IT_COPILOT_LLM_TIMEOUT_S",30)))
+            try:
+                resp=await asyncio.wait_for(self._client.messages.create(**kwargs),timeout=max(1,_env_float("IT_COPILOT_LLM_TIMEOUT_S",30)))
+            except Exception as exc:
+                status_code=getattr(exc,"status_code",None)
+                error_type=type(exc).__name__.lower()
+                if status_code is not None and int(status_code) >= 500 or any(token in error_type for token in ("apiconnection", "connecterror", "timeoutexception", "readtimeout", "connecttimeout")):
+                    gateway_url=os.getenv("ANTHROPIC_BASE_URL", "http://127.0.0.1:8082")
+                    error=GatewayUnavailableError(f"模型网关请求失败（{type(exc).__name__}）", used, traces, gateway_url)
+                    raise error from exc
+                raise
             usage=getattr(resp,"usage",None)
             if usage is not None:
                 token_usage["input_tokens"] += int(getattr(usage,"input_tokens",0) or 0)
