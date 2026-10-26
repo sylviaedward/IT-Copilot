@@ -56,10 +56,10 @@ class Request:
 
 @dataclass
 class AgentResponse:
-    agent_type:AgentType; content:str; success:bool; confidence:float=1.; latency_ms:float=0.; escalate:bool=False; tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); status:str="success"; error_code:Optional[str]=None
+    agent_type:AgentType; content:str; success:bool; confidence:float=1.; latency_ms:float=0.; escalate:bool=False; tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); status:str="success"; error_code:Optional[str]=None; token_usage:Dict[str,int]=field(default_factory=dict)
 @dataclass
 class AgentCallResult:
-    content:str; tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); status:str="success"
+    content:str; tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); status:str="success"; token_usage:Dict[str,int]=field(default_factory=dict)
 class AgentCallError(RuntimeError):
     def __init__(self,message,tools_used,tool_traces): super().__init__(message); self.tools_used=list(tools_used); self.tool_traces=list(tool_traces)
 @dataclass
@@ -71,7 +71,7 @@ class RoutingDecision:
     def multi_agent(self): return bool(self.supporting_agents)
 @dataclass
 class OrchestratorResult:
-    request_id:str; response:str; agent_type:AgentType; intent:Optional[IntentCategory]; escalated:bool=False; latency_ms:float=0.; agent_types:List[AgentType]=field(default_factory=list); primary_agent:Optional[AgentType]=None; supporting_agents:List[AgentType]=field(default_factory=list); tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); routing_reason:str=""; routing_confidence:float=0.; status:str="success"; retryable:bool=False; error_code:Optional[str]=None; plan:Optional[Dict[str,Any]]=None; findings:List[Dict[str,Any]]=field(default_factory=list); trace_events:List[Dict[str,Any]]=field(default_factory=list)
+    request_id:str; response:str; agent_type:AgentType; intent:Optional[IntentCategory]; escalated:bool=False; latency_ms:float=0.; agent_types:List[AgentType]=field(default_factory=list); primary_agent:Optional[AgentType]=None; supporting_agents:List[AgentType]=field(default_factory=list); tools_used:List[str]=field(default_factory=list); tool_traces:List[Dict[str,Any]]=field(default_factory=list); routing_reason:str=""; routing_confidence:float=0.; status:str="success"; retryable:bool=False; error_code:Optional[str]=None; plan:Optional[Dict[str,Any]]=None; findings:List[Dict[str,Any]]=field(default_factory=list); trace_events:List[Dict[str,Any]]=field(default_factory=list); token_usage:Dict[str,int]=field(default_factory=dict)
     @property
     def trace_id(self): return self.request_id
 
@@ -85,13 +85,13 @@ class BaseAgent:
         if not self.stats.available(): return AgentResponse(self.agent_type,"当前 Agent 正在恢复探测，请稍后重试。",False,status="failed",error_code="agent_busy")
         try:
             result=await self._call_llm(req); ms=(time.monotonic()-t0)*1000; ok=result.status in {"success","partial"}; self.stats.success+=int(ok); self.stats.total_ms+=ms; self.stats.record(ok,ms,req.request_id)
-            return AgentResponse(self.agent_type,result.content,ok,req.intent_confidence,ms,self._needs_escalation(result.content),result.tools_used,result.tool_traces,result.status)
+            return AgentResponse(self.agent_type,result.content,ok,req.intent_confidence,ms,self._needs_escalation(result.content),result.tools_used,result.tool_traces,result.status,token_usage=result.token_usage)
         except asyncio.CancelledError: raise
         except Exception as ex:
             ms=(time.monotonic()-t0)*1000; self.stats.total_ms+=ms; self.stats.record(False,ms,req.request_id); logger.exception("%s LLM call failed",self.agent_type.value)
             return AgentResponse(self.agent_type,"抱歉，模型暂时无法处理该请求，请稍后重试。",False,latency_ms=ms,tools_used=getattr(ex,"tools_used",[]),tool_traces=getattr(ex,"tool_traces",[]),status="failed",error_code="agent_failed")
     async def _call_llm(self,req):
-        messages=[]
+        messages=[]; token_usage={"input_tokens":0,"output_tokens":0}
         if req.context: messages += [{"role":"user","content":f"[背景信息]\n{req.context}"},{"role":"assistant","content":"我已了解背景信息。"}]
         if req.entities: messages += [{"role":"user","content":"[结构化实体]\n"+json.dumps(req.entities,ensure_ascii=False)},{"role":"assistant","content":"我会结合这些实体处理。"}]
         messages.append({"role":"user","content":req.message})
@@ -100,11 +100,15 @@ class BaseAgent:
             kwargs={"model":self._model,"max_tokens":self.profile.max_tokens,"temperature":self.profile.temperature,"system":self._build_system_prompt(req),"messages":messages}
             if tools: kwargs["tools"]=[{"name":s.name,"description":s.description,"input_schema":s.input_schema} for s in tools.values()]
             resp=await asyncio.wait_for(self._client.messages.create(**kwargs),timeout=max(1,_env_float("IT_COPILOT_LLM_TIMEOUT_S",30)))
+            usage=getattr(resp,"usage",None)
+            if usage is not None:
+                token_usage["input_tokens"] += int(getattr(usage,"input_tokens",0) or 0)
+                token_usage["output_tokens"] += int(getattr(usage,"output_tokens",0) or 0)
             blocks=list(getattr(resp,"content",[]) or []); calls=[b for b in blocks if self._block_type(b)=="tool_use"]
             if not calls:
                 content=extract_text_content(blocks).strip()
                 if not content: raise AgentCallError("模型未返回有效回复",used,traces)
-                return AgentCallResult(content,used,traces,"partial" if getattr(resp,"stop_reason",None)=="max_tokens" else "success")
+                return AgentCallResult(content,used,traces,"partial" if getattr(resp,"stop_reason",None)=="max_tokens" else "success",token_usage)
             messages.append({"role":"assistant","content":blocks}); results=[]
             for block in calls:
                 name=self._block_value(block,"name"); tool_id=self._block_value(block,"id"); args=self._block_value(block,"input") or {}; spec=tools.get(name); started=time.monotonic(); success=True; error=""
@@ -221,7 +225,8 @@ class AgentOrchestrator:
         primary=next((r for r in responses if r.agent_type==AgentType.TICKET),responses[0])
         content="\n\n".join(f"【{f['agent_type']}】\n{f['content']}" for f in findings)
         status="success" if all(r.success for r in responses) else "partial"
-        return OrchestratorResult(req.request_id,content,primary.agent_type,req.intent,any(r.escalate for r in responses),(time.monotonic()-started)*1000,list(dict.fromkeys(r.agent_type for r in responses)),primary.agent_type,[r.agent_type for r in responses if r.agent_type!=primary.agent_type],list(dict.fromkeys(all_tools)),all_traces,"bounded planner; parallel independent steps",req.intent_confidence,status,status=="partial",None,plan.to_dict(),findings,step_rows)
+        token_usage={"input_tokens":sum(r.token_usage.get("input_tokens",0) for r in responses),"output_tokens":sum(r.token_usage.get("output_tokens",0) for r in responses)}
+        return OrchestratorResult(req.request_id,content,primary.agent_type,req.intent,any(r.escalate for r in responses),(time.monotonic()-started)*1000,list(dict.fromkeys(r.agent_type for r in responses)),primary.agent_type,[r.agent_type for r in responses if r.agent_type!=primary.agent_type],list(dict.fromkeys(all_tools)),all_traces,"bounded planner; parallel independent steps",req.intent_confidence,status,status=="partial",None,plan.to_dict(),findings,step_rows,token_usage)
     async def run_parallel(self,req,decision):
         started=time.monotonic(); responses=await asyncio.gather(*[self._execute(req,t) for t in decision.agent_types],return_exceptions=True); valid=[r for r in responses if isinstance(r,AgentResponse)]; content="\n\n".join(r.content for r in valid); first=valid[0] if valid else AgentResponse(decision.primary_agent,"所有 Agent 均处理失败。",False,status="failed",error_code="agent_failed"); result=OrchestratorResult(req.request_id,content,decision.primary_agent,req.intent,any(r.escalate for r in valid),(time.monotonic()-started)*1000,[r.agent_type for r in valid],decision.primary_agent,decision.supporting_agents,[x for r in valid for x in r.tools_used],[x for r in valid for x in r.tool_traces],decision.reason,decision.confidence,"success" if len(valid)==len(responses) else "partial"); self._recent_tool_traces.append(result.tool_traces); return result
     def get_stats(self):

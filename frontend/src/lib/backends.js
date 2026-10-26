@@ -106,6 +106,32 @@ export async function requestChat(type, settings, message) {
   return normalizeChatResponse(type, raw)
 }
 
+export async function requestChatStream(type, settings, message, onEvent = () => {}) {
+  if (type !== 'python') return requestChat(type, settings, message)
+  const meta = backendMeta(type, settings)
+  const payload = buildChatPayload(type, settings, message)
+  const attemptKey = JSON.stringify([type, meta.baseUrl, settings.userId, settings.conversationId, message])
+  if (!chatAttempts.has(attemptKey)) chatAttempts.set(attemptKey, crypto.randomUUID())
+  payload.client_request_id = chatAttempts.get(attemptKey)
+  const headers = new Headers({ 'Content-Type': 'application/json', Accept: 'text/event-stream' })
+  if (settings.pythonToken) headers.set('Authorization', `Bearer ${settings.pythonToken}`)
+  const response = await fetch(`${normalizeBaseUrl(meta.baseUrl)}/chat/stream`, { method: 'POST', headers, body: JSON.stringify(payload), signal: AbortSignal.timeout(55000) })
+  if (!response.ok || !response.body) { chatAttempts.delete(attemptKey); throw new Error(`${response.status} ${response.statusText}`) }
+  const reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = ''; let eventName = 'message'; let completed = null
+  const consume = (chunk) => {
+    buffer += decoder.decode(chunk, { stream: true }); const blocks = buffer.split('\n\n'); buffer = blocks.pop() || ''
+    for (const block of blocks) {
+      let data = ''
+      for (const line of block.split('\n')) { if (line.startsWith('event:')) eventName = line.slice(6).trim(); if (line.startsWith('data:')) data += line.slice(5).trim() }
+      if (!data) continue
+      let parsed; try { parsed = JSON.parse(data) } catch { parsed = { raw: data } }
+      onEvent(eventName, parsed); if (eventName === 'completed') completed = parsed; eventName = 'message'
+    }
+  }
+  while (true) { const { value, done } = await reader.read(); if (done) break; consume(value) }
+  chatAttempts.delete(attemptKey); if (!completed) throw new Error('流式响应未完成'); return normalizeChatResponse(type, completed)
+}
+
 export async function requestToolTrace(type, settings, requestId) {
   if (!requestId) return null
   const raw = await requestFor(type, settings, `/trace/tool/${encodeURIComponent(requestId)}`)

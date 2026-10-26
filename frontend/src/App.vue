@@ -147,7 +147,7 @@
                     <i></i>
                     <i></i>
                   </span>
-                  <span>正在处理问题</span>
+                  <span>{{ streamStatus || '正在处理问题' }}</span>
                 </div>
               </template>
             </div>
@@ -469,6 +469,7 @@ import {
   createInitialSettings,
   reloadSkills,
   requestChat,
+  requestChatStream,
   requestHealth,
   requestKnowledgeStats,
   requestMonitor,
@@ -505,6 +506,7 @@ const connectionDialog = ref(null)
 const inspectorDialog = ref(null)
 const connectionDraft = reactive({ endpoint: '', userId: '', conversationId: '', pythonToken: '' })
 const pendingAction = ref('')
+const streamStatus = ref('')
 const searched = ref(false)
 const views = [
   { id: 'chat', label: '对话', icon: 'chat' },
@@ -703,7 +705,11 @@ async function sendMessage() {
   const request = requestState.begin('action')
   busy.value = true
   try {
-    const response = await requestChat(request.backend, request.settings, content)
+    streamStatus.value = ''
+    const response = await requestChatStream(request.backend, request.settings, content, (event) => {
+      const labels = { started: '正在识别问题', plan: '正在生成处理计划', step: 'Agent 正在协作', tool: '正在执行工具', approval_required: '等待人工审批', content_delta: '正在生成回复' }
+      streamStatus.value = labels[event] || streamStatus.value
+    })
     if (!request.isCurrent()) return
     if (response.conversationId && !settings.conversationId) {
       settings.conversationId = response.conversationId
@@ -729,6 +735,7 @@ async function sendMessage() {
   } finally {
     if (!request.isCurrent()) return
     busy.value = false
+    streamStatus.value = ''
     await nextTick()
     messageList.value?.scrollTo({ top: messageList.value.scrollHeight, behavior: 'smooth' })
   }

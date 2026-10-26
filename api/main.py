@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
 _ROOT=str(pathlib.Path(__file__).parent.parent.resolve()); sys.path.insert(0,_ROOT) if _ROOT not in sys.path else None
 from fastapi import FastAPI, HTTPException, Request as HTTPRequest, Query
-from fastapi.responses import Response
+from fastapi.responses import Response, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -18,7 +18,7 @@ CHAT_LATENCY=Histogram("it_copilot_chat_latency_seconds","IT-Copilot chat latenc
 class ChatRequest(BaseModel):
     message:str=Field(...,min_length=1,max_length=8000); user_id:str="demo-user"; conv_id:str="demo"; client_request_id:Optional[str]=None; department:str="engineering"
 class ChatResponse(BaseModel):
-    request_id:str; response:str; status:str; agent_type:str; intent:str; intent_group:str="other"; entities:Dict[str,Any]={}; confidence:float=0.; intent_confidence:float=0.; routing_confidence:float=0.; intent_source_scores:Dict[str,float]={}; clarification_needed:bool=False; missing_slots:list[str]=[]; inherited_from_previous:bool=False; trace_id:str=""; tools_used:list[str]=[]; latency_ms:float=0.; escalated:bool=False; plan:Optional[Dict[str,Any]]=None; findings:list[Dict[str,Any]]=[]; approval_required:bool=False; approval_id:Optional[str]=None
+    request_id:str; response:str; status:str; agent_type:str; intent:str; intent_group:str="other"; entities:Dict[str,Any]={}; confidence:float=0.; intent_confidence:float=0.; routing_confidence:float=0.; intent_source_scores:Dict[str,float]={}; clarification_needed:bool=False; missing_slots:list[str]=[]; inherited_from_previous:bool=False; trace_id:str=""; tools_used:list[str]=[]; latency_ms:float=0.; escalated:bool=False; plan:Optional[Dict[str,Any]]=None; findings:list[Dict[str,Any]]=[]; approval_required:bool=False; approval_id:Optional[str]=None; token_usage:Dict[str,int]={}
 
 class ApprovalDecision(BaseModel):
     decision:str=Field(...,pattern="^(approved|rejected)$"); actor:str=Field("it-admin",min_length=1,max_length=120)
@@ -143,9 +143,10 @@ async def chat(payload:ChatRequest):
     approval=approval_summary([t.get("tool_name","") for t in result.tool_traces if t.get("success") and not t.get("retry_safe",True)], payload.message)
     approval_id=rid+":approval" if approval else None
     if approval and _memory: await _memory.create_approval(approval_id,{**approval,"request_id":rid,"user_id":payload.user_id,"conv_id":conv_id})
-    response=ChatResponse(request_id=rid,response=result.response,status=result.status,agent_type=result.agent_type.value,intent=result.intent.value if result.intent else "other",intent_group=req.intent_group or "other",entities=req.entities,confidence=req.intent_confidence,intent_confidence=req.intent_confidence,routing_confidence=result.routing_confidence,intent_source_scores=intent_result.source_scores,clarification_needed=intent_result.clarification_needed,missing_slots=intent_result.missing_slots,inherited_from_previous=intent_result.inherited_from_previous,trace_id=result.trace_id,tools_used=result.tools_used,latency_ms=result.latency_ms,escalated=result.escalated,plan=result.plan,findings=result.findings,approval_required=bool(approval),approval_id=approval_id)
+    response=ChatResponse(request_id=rid,response=result.response,status=result.status,agent_type=result.agent_type.value,intent=result.intent.value if result.intent else "other",intent_group=req.intent_group or "other",entities=req.entities,confidence=req.intent_confidence,intent_confidence=req.intent_confidence,routing_confidence=result.routing_confidence,intent_source_scores=intent_result.source_scores,clarification_needed=intent_result.clarification_needed,missing_slots=intent_result.missing_slots,inherited_from_previous=intent_result.inherited_from_previous,trace_id=result.trace_id,tools_used=result.tools_used,latency_ms=result.latency_ms,escalated=result.escalated,plan=result.plan,findings=result.findings,approval_required=bool(approval),approval_id=approval_id,token_usage=result.token_usage)
     if _memory:
         trace=json.loads(json.dumps(result.__dict__,default=lambda value: value.value if hasattr(value,"value") else str(value)))
+        trace["observability"]={"schema_version":2,"memory":{"working_hit":bool(mem_ctx and mem_ctx.recent_messages),"episodic_hits":len(mem_ctx.relevant_history) if mem_ctx else 0,"profile_hit":bool(mem_ctx and mem_ctx.user_profile)},"intent":{"source":intent_result.recognition_source,"confidence":intent_result.confidence,"group_agreement":intent_result.source_scores.get("group_agreement")},"approval":{"required":bool(approval),"approval_id":approval_id},"fallback":{"intent_source":intent_result.recognition_source}}
         await _memory.commit_turn(payload.user_id,conv_id,rid,payload.message,response.model_dump(),trace,state=req.conversation_state)
         asyncio.create_task(_memory.update_profile(payload.user_id,conv_id))
         if result.intent and result.intent.value not in {"greeting", "chitchat"}:
@@ -153,4 +154,31 @@ async def chat(payload:ChatRequest):
     CHAT_REQUESTS.labels(status=response.status, intent_group=response.intent_group).inc()
     CHAT_LATENCY.labels(status=response.status).observe(time.monotonic()-request_started)
     return response
+
+def _sse(event: str, data: Any) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False, default=str)}\n\n"
+
+@app.post("/chat/stream")
+async def chat_stream(payload: ChatRequest):
+    """SSE facade preserving the normal chat transaction and idempotency path."""
+    async def generate():
+        yield _sse("status", {"stage":"started","request_id":payload.client_request_id})
+        try:
+            raw=await chat(payload)
+            response=raw if isinstance(raw,ChatResponse) else ChatResponse.model_validate(raw)
+            if response.plan: yield _sse("plan", response.plan)
+            for finding in response.findings: yield _sse("step", finding)
+            for tool in response.tools_used: yield _sse("tool", {"name":tool,"status":"finished"})
+            if response.approval_required: yield _sse("approval_required", {"approval_id":response.approval_id})
+            text=response.response
+            for index in range(0,len(text),80):
+                yield _sse("content_delta", {"delta":text[index:index+80]})
+                await asyncio.sleep(0)
+            yield _sse("completed", response.model_dump())
+        except HTTPException as exc:
+            yield _sse("error", {"status_code":exc.status_code,"detail":exc.detail})
+        except Exception:
+            logger.exception("SSE chat failed")
+            yield _sse("error", {"status_code":500,"detail":"stream_failed"})
+    return StreamingResponse(generate(), media_type="text/event-stream", headers={"Cache-Control":"no-cache","X-Accel-Buffering":"no"})
 
