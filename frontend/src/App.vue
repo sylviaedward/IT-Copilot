@@ -422,7 +422,7 @@
       <form @submit.prevent="saveConnection">
         <label>
           <span>服务地址</span>
-          <input v-model="connectionDraft.endpoint" required placeholder="/api/python 或 http://localhost:8000" />
+          <input v-model="connectionDraft.endpoint" required placeholder="http://127.0.0.1:8001" />
           <small>使用代理路径或完整的 HTTP / HTTPS 地址。</small>
         </label>
         <label>

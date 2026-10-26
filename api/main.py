@@ -112,9 +112,11 @@ async def chat(payload:ChatRequest):
     request_started=time.monotonic()
     rid=payload.client_request_id or str(uuid.uuid4())
     conv_id=payload.conv_id or str(uuid.uuid5(uuid.NAMESPACE_URL,payload.user_id+":"+rid))
+    mem_ctx=None
     from agents.agent_orchestrator import Request
     from core.conversation_state import merge_state
     async def execute():
+        nonlocal mem_ctx
         mem_ctx=await _memory.get_context(payload.user_id,conv_id,query=payload.message) if _memory else None
         history=[{"role":m.role.value,"content":m.content} for m in mem_ctx.recent_messages[-5:]] if mem_ctx and mem_ctx.recent_messages else None
         previous_group=(getattr(mem_ctx,"state",{}) or {}).get("intent_group") if mem_ctx else None

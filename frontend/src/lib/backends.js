@@ -3,8 +3,8 @@ const DEFAULT_BACKENDS = {
   python: {
     id: 'python',
     label: 'Python',
-    baseUrl: runtimeConfig().pythonApiUrl || import.meta.env.VITE_PYTHON_API_URL || '/api/python',
-    port: '8000'
+    baseUrl: runtimeConfig().pythonApiUrl || import.meta.env.VITE_PYTHON_API_URL || 'http://127.0.0.1:8001',
+    port: '8001'
   },
   java: {
     id: 'java',
@@ -16,13 +16,14 @@ const DEFAULT_BACKENDS = {
 
 export function createInitialSettings() {
   const saved = readSettings()
+  const savedPythonEndpoint = saved.endpoints?.python === '/api/python' ? 'http://127.0.0.1:8001' : saved.endpoints?.python
   return {
     pythonToken: '',
     backend: saved.backend || import.meta.env.VITE_DEFAULT_BACKEND || 'python',
     userId: saved.userId || 'u1001',
     conversationId: saved.conversationId || '',
     endpoints: {
-      python: saved.endpoints?.python || DEFAULT_BACKENDS.python.baseUrl,
+      python: savedPythonEndpoint || DEFAULT_BACKENDS.python.baseUrl,
       java: saved.endpoints?.java || DEFAULT_BACKENDS.java.baseUrl
     }
   }
@@ -192,6 +193,7 @@ function normalizeChatResponse(type, raw) {
     findings: raw.findings || [],
     approvalRequired: Boolean(raw.approval_required ?? raw.approvalRequired),
     approvalId: raw.approval_id || raw.approvalId || null,
+    tokenUsage: raw.token_usage || raw.tokenUsage || {},
     raw
   }
 }

@@ -4,9 +4,13 @@ __pycache__/
 *.egg-info/
 dist/
 build/
+frontend/dist/
+node_modules/
+.pytest_cache/
 .venv/
 venv/
 .npm-cache/
+.vite/
 
 # 环境变量（含敏感信息）
 .env
@@ -31,6 +35,7 @@ build-image*.sh
 
 # ChromaDB 本地数据
 *.sqlite3
+*.db
 
 # 备份文件
 *~
