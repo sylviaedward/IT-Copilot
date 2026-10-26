@@ -101,13 +101,27 @@ docs/         设计取舍、截图与变更记录
 
 当前 AD/LDAP、ITSM、CMDB、审批中心、设备库存和状态页均为本地 mock；接入生产时应替换适配器，不改变 Agent/工具治理接口。所有写操作保持最小权限、默认不执行；密码、OTP、恢复码、私钥等敏感字段会脱敏且不回显。
 
-## 文档与截图
+## 文档
 
 - [模块设计与 trade-off](docs/design-tradeoffs.md)
 - [变更记录](CHANGELOG.md)
-- [只读问答](docs/assets/01-readonly-rag.png)
-- [缺槽位澄清](docs/assets/02-slot-clarification.png)
-- [待审批与复杂计划](docs/assets/03-pending-approval.png)
+
+## 界面演示
+
+<p align="center">
+  <img src="docs/assets/01-readonly-rag.png" alt="只读问答" width="80%"><br>
+  <em>只读问答：意图识别 + 混合检索 RAG，回答引用知识库证据</em>
+</p>
+
+<p align="center">
+  <img src="docs/assets/02-slot-clarification.png" alt="缺槽位澄清" width="80%"><br>
+  <em>缺槽位澄清：写操作信息不全时先反问，不执行任何写工具</em>
+</p>
+
+<p align="center">
+  <img src="docs/assets/03-pending-approval.png" alt="待审批" width="80%"><br>
+  <em>待审批（HITL）：写操作只生成 pending_approval，人工批准后才执行</em>
+</p>
 
 ## License
 
