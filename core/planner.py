@@ -34,11 +34,16 @@ class ExecutionPlan:
                 "token_budget": self.token_budget, "steps": [s.to_dict() for s in self.steps]}
 
 
+def _normalize_text(message: str) -> str:
+    """Normalize only matching text; preserve the original goal for display."""
+    return str(message or "").casefold()
+
+
 def build_plan(message: str, plan_id: str) -> ExecutionPlan:
     text = str(message or "")
     # casefold() makes English keywords case-insensitive while preserving the
     # original text for the user-visible plan goal.
-    lower = text.casefold()
+    lower = _normalize_text(text)
     steps: List[PlanStep] = []
     if any(k in lower for k in ("权限", "账号", "密码", "mfa", "解锁")):
         steps.append(PlanStep("access", "核验身份与权限申请信息", "access", [], risk="high"))
@@ -64,6 +69,6 @@ def build_plan(message: str, plan_id: str) -> ExecutionPlan:
 
 def is_complex_request(message: str) -> bool:
     text = str(message or "")
-    lower = text.casefold()
+    lower = _normalize_text(text)
     markers = ("并且", "同时", "另外", "以及", "先…再", "准备新", "权限")
     return sum(marker in lower for marker in markers) >= 2 or ("权限" in lower and any(k in lower for k in ("电脑", "设备", "软件")))

@@ -25,7 +25,7 @@ class IntentResult:
 
 class IntentRecognizer:
     def __init__(self,api_key:str,base_url:Optional[str]=None,model:str=""):
-        calibration_path=os.getenv("IT_INTENT_CALIBRATION_PATH",os.path.join(os.path.dirname(__file__),"../evaluation/reports/intent_calibration_latest.json"))
+        calibration_path=os.getenv("IT_INTENT_CALIBRATION_PATH",os.path.join(os.path.dirname(__file__),"../evaluation/config/intent_calibration.json"))
         self.client=AsyncAnthropic(api_key=api_key,**({"base_url":base_url} if base_url else {})); self.model=model; self._embedding=IntentEmbedding(); self._cache={}; self._cache_limit=max(100,int(os.getenv("IT_INTENT_CACHE_SIZE","2048"))); self._temperatures=load_temperatures(calibration_path); self._clarify_threshold=float(os.getenv("IT_INTENT_CLARIFY_THRESHOLD","0.60")); self._handoff_threshold=float(os.getenv("IT_INTENT_HANDOFF_THRESHOLD","0.35")); self._metrics={"llm_calls":0,"llm_success":0,"fallback_calls":0,"fallback_disabled":0,"fallback_errors":0,"last_error":None}
     def metrics(self): return dict(self._metrics)
     def reset_metrics(self): self._metrics.update({"llm_calls":0,"llm_success":0,"fallback_calls":0,"fallback_disabled":0,"fallback_errors":0,"last_error":None})
