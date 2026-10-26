@@ -1,0 +1,548 @@
+{
+  "accuracy": 1.0,
+  "macro_f1": 1.0,
+  "per_class": {
+    "access_review": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "account_unlock": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "chitchat": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "device_failure": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "device_provisioning": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "email_collab_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "greeting": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "howto": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "human_handoff": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "mfa_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "network_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "out_of_scope": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "password_reset": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "permission_request": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "software_install": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "software_license": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ticket_cancel": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ticket_create": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "ticket_status": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "vpn_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "wifi_issue": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    }
+  },
+  "total": 47,
+  "correct": 47,
+  "cases": [
+    {
+      "message": "VPN 连不上",
+      "expected": "vpn_issue",
+      "predicted": "vpn_issue",
+      "confidence": 0.908,
+      "reasoning": "用户明确表示 VPN 无法连接，属于企业网络访问类 VPN 故障；未提供错误码、设备或位置等更多信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "公司 VPN 一直连接超时",
+      "expected": "vpn_issue",
+      "predicted": "vpn_issue",
+      "confidence": 0.7866,
+      "reasoning": "用户明确报告公司 VPN 持续连接超时，属于 VPN 连接故障。未提供设备、员工、地点、错误码或工单编号等实体信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "虚拟专网断了",
+      "expected": "vpn_issue",
+      "predicted": "vpn_issue",
+      "confidence": 0.6635,
+      "reasoning": "用户表示虚拟专网连接中断，属于 VPN 连接故障；未提供设备、错误码、地点或工单信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "Wi-Fi 一直断开",
+      "expected": "wifi_issue",
+      "predicted": "wifi_issue",
+      "confidence": 0.658,
+      "reasoning": "用户明确描述 Wi‑Fi 持续断开，属于企业无线网络连接故障；未提供设备、位置或错误代码等其他非敏感实体。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "无线网络搜不到",
+      "expected": "wifi_issue",
+      "predicted": "wifi_issue",
+      "confidence": 0.7715,
+      "reasoning": "用户表示无法搜索到无线网络，属于企业 Wi‑Fi 连接或发现异常。未提供设备、位置或错误码等进一步信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "网络很慢，访问不了内网",
+      "expected": "network_issue",
+      "predicted": "network_issue",
+      "confidence": 0.7649,
+      "reasoning": "用户反馈网络速度很慢且无法访问企业内网，属于网络连接或企业内网访问故障。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "办公室网络故障",
+      "expected": "network_issue",
+      "predicted": "network_issue",
+      "confidence": 0.6415,
+      "reasoning": "用户报告办公室网络故障，属于企业网络连接问题；未提供具体设备、错误码或工单信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "帮我重置密码",
+      "expected": "password_reset",
+      "predicted": "password_reset",
+      "confidence": 0.8458,
+      "reasoning": "用户明确请求重置密码，属于密码重置类 IT 服务请求。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "忘记域账号密码了",
+      "expected": "password_reset",
+      "predicted": "password_reset",
+      "confidence": 0.8919,
+      "reasoning": "用户明确表示忘记域账号密码，需要进行密码重置。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "我的账号被锁定了",
+      "expected": "account_unlock",
+      "predicted": "account_unlock",
+      "confidence": 0.8458,
+      "reasoning": "用户明确表示账号被锁定，属于账号解锁请求。未提供具体账号、系统或错误代码等实体信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "请帮我解锁企业账号",
+      "expected": "account_unlock",
+      "predicted": "account_unlock",
+      "confidence": 0.847,
+      "reasoning": "用户明确请求解锁企业账号，属于账号解锁类 IT 服务台事项。未提供可提取的账号、员工、系统或工单标识。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "MFA 验证失败",
+      "expected": "mfa_issue",
+      "predicted": "mfa_issue",
+      "confidence": 0.919,
+      "reasoning": "用户明确表示多因素认证（MFA）验证失败，属于 MFA 问题，需要进一步排查或处理。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "收不到二次验证码",
+      "expected": "mfa_issue",
+      "predicted": "mfa_issue",
+      "confidence": 0.8697,
+      "reasoning": "用户表示无法收到二次验证码，属于多因素认证（MFA）验证码接收问题。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "申请 GitLab 权限",
+      "expected": "permission_request",
+      "predicted": "permission_request",
+      "confidence": 0.6415,
+      "reasoning": "用户明确申请 GitLab 的访问权限，属于权限申请事项。未提供具体项目、角色或员工信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "开通生产系统访问权限",
+      "expected": "permission_request",
+      "predicted": "permission_request",
+      "confidence": 0.7547,
+      "reasoning": "用户请求为生产系统开通访问权限，属于企业 IT 权限申请。未提供具体员工、部门或角色信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "我需要申请应用权限",
+      "expected": "permission_request",
+      "predicted": "permission_request",
+      "confidence": 0.6525,
+      "reasoning": "用户明确表示需要申请应用权限，属于权限申请类 IT 服务请求；未提供具体应用、员工或角色信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "检查一下我的系统权限",
+      "expected": "access_review",
+      "predicted": "access_review",
+      "confidence": 0.6715,
+      "reasoning": "用户请求检查其当前系统权限，属于权限访问审查，而非申请新增权限或故障排查。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "电脑蓝屏了",
+      "expected": "device_failure",
+      "predicted": "device_failure",
+      "confidence": 0.8731,
+      "reasoning": "用户报告电脑蓝屏，属于终端设备故障，需要进一步排查蓝屏原因。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "显示器黑屏",
+      "expected": "device_failure",
+      "predicted": "device_failure",
+      "confidence": 0.897,
+      "reasoning": "用户报告显示器黑屏，属于显示设备故障。未提供设备编号、位置或错误代码等额外信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "键盘无法使用",
+      "expected": "device_failure",
+      "predicted": "device_failure",
+      "confidence": 0.9135,
+      "reasoning": "用户明确反馈键盘无法使用，属于硬件设备故障，当前未提供设备编号、错误码或位置等实体信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "申请一台新电脑",
+      "expected": "device_provisioning",
+      "predicted": "device_provisioning",
+      "confidence": 0.7115,
+      "reasoning": "用户申请一台新电脑，属于设备配置或领用申请。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "入职需要领取办公设备",
+      "expected": "device_provisioning",
+      "predicted": "device_provisioning",
+      "confidence": 0.7299,
+      "reasoning": "用户表示因入职需要领取办公设备，属于办公设备配置或发放请求。未提供具体设备类型、员工编号或地点等信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "帮我安装办公软件",
+      "expected": "software_install",
+      "predicted": "software_install",
+      "confidence": 0.8566,
+      "reasoning": "用户明确请求安装办公软件，属于软件安装类 IT 服务台请求，未提供具体软件名称、设备或位置等信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "安装开发工具",
+      "expected": "software_install",
+      "predicted": "software_install",
+      "confidence": 0.8915,
+      "reasoning": "用户明确请求安装开发工具，属于软件安装类 IT 服务请求，但未提供具体工具名称、设备或位置等信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "软件许可证过期了",
+      "expected": "software_license",
+      "predicted": "software_license",
+      "confidence": 0.8348,
+      "reasoning": "用户明确表示软件许可证已过期，属于软件许可证问题。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "申请软件 license",
+      "expected": "software_license",
+      "predicted": "software_license",
+      "confidence": 0.7177,
+      "reasoning": "用户明确表示申请软件许可证，属于软件许可申请类 IT 服务请求，未提供具体软件名称或其他实体信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "邮箱收不到邮件",
+      "expected": "email_collab_issue",
+      "predicted": "email_collab_issue",
+      "confidence": 0.9215,
+      "reasoning": "用户表示邮箱无法收到邮件，属于企业邮箱或协作系统的邮件接收故障。未提供具体错误码、设备、账号或邮件系统信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "会议协作工具异常",
+      "expected": "email_collab_issue",
+      "predicted": "email_collab_issue",
+      "confidence": 0.905,
+      "reasoning": "用户反馈会议协作工具出现异常，属于企业协作/会议工具故障类 IT 请求，未提供具体错误码、设备或地点信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "怎么配置公司代理",
+      "expected": "howto",
+      "predicted": "howto",
+      "confidence": 0.6415,
+      "reasoning": "用户询问如何配置公司的代理，属于 IT 配置操作指导，未描述故障、账号或具体设备。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "请告诉我 VPN 使用教程",
+      "expected": "howto",
+      "predicted": "howto",
+      "confidence": 0.688,
+      "reasoning": "用户请求 VPN 使用教程，属于企业 IT 使用方法指导，不涉及故障、账号或权限变更。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "帮我创建 IT 工单",
+      "expected": "ticket_create",
+      "predicted": "ticket_create",
+      "confidence": 0.9325,
+      "reasoning": "用户明确请求创建 IT 工单，但未提供具体问题、系统或设备等详细信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "提交一个服务台请求",
+      "expected": "ticket_create",
+      "predicted": "ticket_create",
+      "confidence": 0.7628,
+      "reasoning": "用户明确表示希望提交一个服务台请求，但未提供具体问题、系统或设备信息，因此归类为创建工单意图。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "查询工单状态",
+      "expected": "ticket_status",
+      "predicted": "ticket_status",
+      "confidence": 0.919,
+      "reasoning": "用户明确请求查询工单状态，属于工单状态查询意图；但未提供工单编号，因此无法进一步定位具体工单。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "我的工单处理到哪了",
+      "expected": "ticket_status",
+      "predicted": "ticket_status",
+      "confidence": 0.8915,
+      "reasoning": "用户询问工单当前处理进度，属于工单状态查询；未提供具体工单编号。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "取消我的工单",
+      "expected": "ticket_cancel",
+      "predicted": "ticket_cancel",
+      "confidence": 0.949,
+      "reasoning": "用户明确请求取消工单，但未提供工单编号。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "我要转人工",
+      "expected": "human_handoff",
+      "predicted": "human_handoff",
+      "confidence": 0.8133,
+      "reasoning": "用户明确表示希望转接人工服务，属于人工客服转接请求。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "升级给 IT 服务台处理",
+      "expected": "human_handoff",
+      "predicted": "human_handoff",
+      "confidence": 0.8761,
+      "reasoning": "用户明确要求将事项升级并交由 IT 服务台处理，属于人工转接/服务台升级请求；未提供具体故障、系统或工单信息。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "你好",
+      "expected": "greeting",
+      "predicted": "greeting",
+      "confidence": 0.669,
+      "reasoning": "用户仅发送“你好”，属于问候语，没有提出 IT 服务请求或包含可提取的非敏感实体。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "早上好，有人可以帮忙吗",
+      "expected": "greeting",
+      "predicted": "greeting",
+      "confidence": 0.8553,
+      "reasoning": "用户仅进行问候并询问是否有人可以帮忙，未提出具体 IT 问题。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "你是谁",
+      "expected": "chitchat",
+      "predicted": "chitchat",
+      "confidence": 0.647,
+      "reasoning": "用户询问“你是谁”，属于对助手身份的闲聊性质提问，不涉及企业 IT 服务请求。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "谢谢你的帮助",
+      "expected": "chitchat",
+      "predicted": "chitchat",
+      "confidence": 0.669,
+      "reasoning": "用户仅表达感谢，没有提出 IT 服务请求，属于闲聊/礼貌回应。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "你能做什么",
+      "expected": "chitchat",
+      "predicted": "chitchat",
+      "confidence": 0.6415,
+      "reasoning": "用户询问“你能做什么”，属于对助手能力的概括性了解，不包含具体 IT 服务请求，因此分类为闲聊。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "帮我写一首诗",
+      "expected": "out_of_scope",
+      "predicted": "out_of_scope",
+      "confidence": 0.719,
+      "reasoning": "用户请求创作诗歌，不属于企业 IT 服务台支持范围。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "今天上海天气怎么样",
+      "expected": "out_of_scope",
+      "predicted": "out_of_scope",
+      "confidence": 0.7025,
+      "reasoning": "用户询问上海天气，属于非企业 IT 服务台范围，未涉及设备、账户、网络、软件或工单等 IT 服务请求。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "还是不行",
+      "expected": "network_issue",
+      "predicted": "network_issue",
+      "confidence": 0.6,
+      "reasoning": "用户仅表示“还是不行”，缺少具体系统、设备或错误信息；在无历史上下文的情况下无法准确归类到具体 IT 意图。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "那个权限呢",
+      "expected": "permission_request",
+      "predicted": "permission_request",
+      "confidence": 0.6,
+      "reasoning": "用户提到“权限”，通常表示询问或申请系统访问权限；但缺少具体系统、角色和对象信息，因此按一般权限请求分类。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    },
+    {
+      "message": "第二个怎么处理",
+      "expected": "ticket_status",
+      "predicted": "ticket_status",
+      "confidence": 0.65,
+      "reasoning": "用户仅询问“第二个怎么处理”，没有提供可识别的 IT 问题类型、对象或上下文，无法进一步归类。",
+      "llm_used": true,
+      "recognition_source": "llm_tool_use"
+    }
+  ],
+  "llm_calls": 47,
+  "llm_success": 47,
+  "fallback_calls": 0,
+  "fallback_disabled": 0,
+  "fallback_errors": 0,
+  "last_error": null,
+  "llm_only_accuracy": 1.0,
+  "llm_only_total": 47,
+  "fallback_accuracy": null,
+  "fallback_total": 0
+}
